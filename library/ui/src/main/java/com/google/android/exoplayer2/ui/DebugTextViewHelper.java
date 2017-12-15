@@ -18,9 +18,12 @@ package com.google.android.exoplayer2.ui;
 import android.annotation.SuppressLint;
 import android.widget.TextView;
 import com.google.android.exoplayer2.Format;
+import com.google.android.exoplayer2.PlaybackParameters;
 import com.google.android.exoplayer2.Player;
 import com.google.android.exoplayer2.SimpleExoPlayer;
 import com.google.android.exoplayer2.decoder.DecoderCounters;
+
+import java.text.DecimalFormat;
 import java.util.Locale;
 
 /**
@@ -35,6 +38,8 @@ public final class DebugTextViewHelper extends Player.DefaultEventListener imple
   private final TextView textView;
 
   private boolean started;
+
+  private DecimalFormat df = new DecimalFormat("#.###");
 
   /**
    * @param player The {@link SimpleExoPlayer} from which debug information should be obtained.
@@ -101,7 +106,9 @@ public final class DebugTextViewHelper extends Player.DefaultEventListener imple
   }
 
   private String getPlayerStateString() {
-    String text = "playWhenReady:" + player.getPlayWhenReady() + " playbackState:";
+    PlaybackParameters params = player.getPlaybackParameters();
+    long spdAdjDur = params.getSpeedAdjustedDurationUs(1000L);
+    String text = "pitch: " + df.format(params.pitch) + " speed: " + df.format(params.speed) + " speedAdjustedDuration(us): " + df.format(spdAdjDur) + " playWhenReady:" + player.getPlayWhenReady() + " playbackState:";
     switch (player.getPlaybackState()) {
       case Player.STATE_BUFFERING:
         text += "buffering";

@@ -23,6 +23,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.annotation.NonNull;
+import android.util.Log;
 import android.text.TextUtils;
 import android.view.KeyEvent;
 import android.view.View;
@@ -38,6 +39,7 @@ import com.google.android.exoplayer2.C.ContentType;
 import com.google.android.exoplayer2.DefaultRenderersFactory;
 import com.google.android.exoplayer2.ExoPlaybackException;
 import com.google.android.exoplayer2.ExoPlayerFactory;
+import com.google.android.exoplayer2.PlaybackParameters;
 import com.google.android.exoplayer2.Player;
 import com.google.android.exoplayer2.SimpleExoPlayer;
 import com.google.android.exoplayer2.drm.DefaultDrmSessionManager;
@@ -84,6 +86,8 @@ import java.util.UUID;
 public class PlayerActivity extends Activity implements OnClickListener,
     PlaybackControlView.VisibilityListener {
 
+  private static final String TAG = "PlayerActivity";
+
   public static final String DRM_SCHEME_UUID_EXTRA = "drm_scheme_uuid";
   public static final String DRM_LICENSE_URL = "drm_license_url";
   public static final String DRM_KEY_REQUEST_PROPERTIES = "drm_key_request_properties";
@@ -112,6 +116,8 @@ public class PlayerActivity extends Activity implements OnClickListener,
   private LinearLayout debugRootView;
   private TextView debugTextView;
   private Button retryButton;
+  private Button pitchButton, pitchButtonDown, speedButton, speedButtonDown, pitchDButton, speedDButton;
+  private float pitchD = 0.05f, speedD = 0.05f;
 
   private DataSource.Factory mediaDataSourceFactory;
   private SimpleExoPlayer player;
@@ -228,6 +234,53 @@ public class PlayerActivity extends Activity implements OnClickListener,
   public void onClick(View view) {
     if (view == retryButton) {
       initializePlayer();
+    } else if (view == pitchButton) {
+      Log.d(TAG, "pitch up");
+
+      PlaybackParameters params = player.getPlaybackParameters();
+      float pitch = params.pitch;
+      float speed = params.speed;
+
+      params = new PlaybackParameters(speed, pitch+pitchD);
+      player.setPlaybackParameters(params);
+    } else if (view == pitchButtonDown) {
+      Log.d(TAG, "pitch down");
+
+      PlaybackParameters params = player.getPlaybackParameters();
+      float pitch = params.pitch;
+      float speed = params.speed;
+
+      params = new PlaybackParameters(speed, pitch-pitchD);
+      player.setPlaybackParameters(params);
+    } else if (view == speedButton) {
+      Log.d(TAG, "speed up");
+
+      PlaybackParameters params = player.getPlaybackParameters();
+      float pitch = params.pitch;
+      float speed = params.speed;
+
+      params = new PlaybackParameters(speed+speedD, pitch);
+      player.setPlaybackParameters(params);
+    } else if (view == speedButtonDown) {
+      Log.d(TAG, "speed down");
+
+      PlaybackParameters params = player.getPlaybackParameters();
+      float pitch = params.pitch;
+      float speed = params.speed;
+
+      params = new PlaybackParameters(speed-speedD, pitch);
+      player.setPlaybackParameters(params);
+
+    } else if (view == pitchDButton) {
+      pitchD = (pitchD == 0.05f) ? 0.01f : ( (pitchD == 0.01f) ? 0.001f : 0.05f );
+      Button btn = (Button) view;
+      btn.setText(Float.toString(pitchD*100f));
+
+    } else if (view == speedDButton) {
+      speedD = (speedD == 0.05f) ? 0.01f : ( (speedD == 0.01f) ? 0.001f : 0.05f );
+      Button btn = (Button) view;
+      btn.setText(Float.toString(speedD*100f));
+
     } else if (view.getParent() == debugRootView) {
       MappedTrackInfo mappedTrackInfo = trackSelector.getCurrentMappedTrackInfo();
       if (mappedTrackInfo != null) {
@@ -511,6 +564,37 @@ public class PlayerActivity extends Activity implements OnClickListener,
         debugRootView.addView(button, debugRootView.getChildCount() - 1);
       }
     }
+
+    pitchButton = new Button(this);
+    pitchButton.setText("Pitch up");
+    pitchButton.setOnClickListener(this);
+    debugRootView.addView(pitchButton, debugRootView.getChildCount() - 1);
+
+    pitchButtonDown = new Button(this);
+    pitchButtonDown.setText("Pitch down");
+    pitchButtonDown.setOnClickListener(this);
+    debugRootView.addView(pitchButtonDown, debugRootView.getChildCount() - 1);
+
+    pitchDButton = new Button(this);
+    pitchDButton.setText("5.0");
+    pitchDButton.setOnClickListener(this);
+    debugRootView.addView(pitchDButton, debugRootView.getChildCount() - 1);
+
+    speedButton = new Button(this);
+    speedButton.setText("Speed up");
+    speedButton.setOnClickListener(this);
+    debugRootView.addView(speedButton, debugRootView.getChildCount() - 1);
+
+    speedButtonDown = new Button(this);
+    speedButtonDown.setText("Speed down");
+    speedButtonDown.setOnClickListener(this);
+    debugRootView.addView(speedButtonDown, debugRootView.getChildCount() - 1);
+
+    speedDButton = new Button(this);
+    speedDButton.setText("5.0");
+    speedDButton.setOnClickListener(this);
+    debugRootView.addView(speedDButton, debugRootView.getChildCount() - 1);
+
   }
 
   private void showControls() {

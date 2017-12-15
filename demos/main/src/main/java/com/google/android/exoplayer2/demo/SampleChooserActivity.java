@@ -16,12 +16,16 @@
 package com.google.android.exoplayer2.demo;
 
 import android.app.Activity;
+import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.AssetManager;
+import android.database.Cursor;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Environment;
+import android.provider.MediaStore;
 import android.util.JsonReader;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -40,6 +44,7 @@ import com.google.android.exoplayer2.upstream.DataSpec;
 import com.google.android.exoplayer2.upstream.DefaultDataSource;
 import com.google.android.exoplayer2.util.Assertions;
 import com.google.android.exoplayer2.util.Util;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -55,11 +60,16 @@ public class SampleChooserActivity extends Activity {
 
   private static final String TAG = "SampleChooserActivity";
 
+  final int FILE_SELECT_CODE = 0;
+
   @Override
   public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.sample_chooser_activity);
+
+    /*
     Intent intent = getIntent();
+
     String dataUri = intent.getDataString();
     String[] uris;
     if (dataUri != null) {
@@ -83,6 +93,63 @@ public class SampleChooserActivity extends Activity {
     }
     SampleListLoader loaderTask = new SampleListLoader();
     loaderTask.execute(uris);
+*/
+
+    Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+    intent.setType("*/*");
+
+    intent.addCategory(Intent.CATEGORY_OPENABLE);
+
+    try {
+      startActivityForResult(
+              Intent.createChooser(intent, "Select a File to Upload"),
+              FILE_SELECT_CODE);
+    } catch (android.content.ActivityNotFoundException ex) {
+      // Potentially direct the user to the Market with a Dialog
+      Toast.makeText(this, "Please install a File Manager.",
+              Toast.LENGTH_SHORT).show();
+    }
+
+  }
+
+  @Override
+  protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+    if (requestCode == FILE_SELECT_CODE) {
+      if (resultCode == RESULT_OK) {
+        // get path of selected file
+        Uri uri = data.getData();
+        String path = getPathFromContentUri(uri);
+        Log.d(TAG, "uri=" + uri.toString());
+        Log.d(TAG, "path=" + path);
+
+        Intent intent = new Intent(this, PlayerActivity.class);
+        intent.setData(uri);
+        //intent.setData(Uri.fromFile(new File(Environment.getExternalStorageDirectory() + "/Music/sofa.ogg")));
+        intent.setAction(PlayerActivity.ACTION_VIEW);
+        startActivity(intent);
+      }
+    }
+    super.onActivityResult(requestCode, resultCode, data);
+  }
+
+  private String getPathFromContentUri(Uri uri) {
+    String path = uri.getPath();
+    if (uri.toString().startsWith("content://")) {
+      String[] projection = { MediaStore.MediaColumns.DATA };
+      ContentResolver cr = getApplicationContext().getContentResolver();
+      Cursor cursor = cr.query(uri, projection, null, null, null);
+      if (cursor != null) {
+        try {
+          if (cursor.moveToFirst()) {
+            path = cursor.getString(0);
+          }
+        } finally {
+          cursor.close();
+        }
+      }
+
+    }
+    return path;
   }
 
   private void onSampleGroups(final List<SampleGroup> groups, boolean sawError) {

@@ -214,7 +214,7 @@ public class PlaybackControlView extends FrameLayout {
   /**
    * The default show timeout, in milliseconds.
    */
-  public static final int DEFAULT_SHOW_TIMEOUT_MS = 5000;
+  public static final int DEFAULT_SHOW_TIMEOUT_MS = 30000;
   /**
    * The default repeat toggle modes.
    */
