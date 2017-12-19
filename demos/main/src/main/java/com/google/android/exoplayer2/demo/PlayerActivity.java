@@ -117,7 +117,7 @@ public class PlayerActivity extends Activity implements OnClickListener,
   private TextView debugTextView;
   private Button retryButton;
   private Button pitchButton, pitchButtonDown, speedButton, speedButtonDown, pitchDButton, speedDButton;
-  private float pitchD = 0.05f, speedD = 0.05f;
+  private float pitchSemitones = 0.0f, speedD = 0.05f;
 
   private DataSource.Factory mediaDataSourceFactory;
   private SimpleExoPlayer player;
@@ -230,6 +230,28 @@ public class PlayerActivity extends Activity implements OnClickListener,
 
   // OnClickListener methods
 
+  private void showSemitones() {
+    if (pitchSemitones>=0.0f) {
+      pitchDButton.setText("+" + pitchSemitones);
+      return;
+    }
+    pitchDButton.setText(Float.toString(pitchSemitones));
+  }
+
+  private float calculatePercent() {
+    if (pitchSemitones==0f) {
+      return 1f;
+    }
+
+    float tmp = pitchSemitones * (float) (Math.pow(2,1d/12d) - 1d);
+
+    if (pitchSemitones>0f) {
+      return 1f + tmp;
+    }
+
+    return 1f / (1f + Math.abs(tmp));
+  }
+
   @Override
   public void onClick(View view) {
     if (view == retryButton) {
@@ -237,20 +259,26 @@ public class PlayerActivity extends Activity implements OnClickListener,
     } else if (view == pitchButton) {
       Log.d(TAG, "pitch up");
 
+      pitchSemitones++;
+      showSemitones();
+
       PlaybackParameters params = player.getPlaybackParameters();
-      float pitch = params.pitch;
+      float pitch = calculatePercent();
       float speed = params.speed;
 
-      params = new PlaybackParameters(speed, pitch+pitchD);
+      params = new PlaybackParameters(speed, pitch);
       player.setPlaybackParameters(params);
     } else if (view == pitchButtonDown) {
       Log.d(TAG, "pitch down");
 
+      pitchSemitones--;
+      showSemitones();
+
       PlaybackParameters params = player.getPlaybackParameters();
-      float pitch = params.pitch;
+      float pitch = calculatePercent();
       float speed = params.speed;
 
-      params = new PlaybackParameters(speed, pitch-pitchD);
+      params = new PlaybackParameters(speed, pitch);
       player.setPlaybackParameters(params);
     } else if (view == speedButton) {
       Log.d(TAG, "speed up");
@@ -270,11 +298,6 @@ public class PlayerActivity extends Activity implements OnClickListener,
 
       params = new PlaybackParameters(speed-speedD, pitch);
       player.setPlaybackParameters(params);
-
-    } else if (view == pitchDButton) {
-      pitchD = (pitchD == 0.05f) ? 0.01f : ( (pitchD == 0.01f) ? 0.001f : 0.05f );
-      Button btn = (Button) view;
-      btn.setText(Float.toString(pitchD*100f));
 
     } else if (view == speedDButton) {
       speedD = (speedD == 0.05f) ? 0.01f : ( (speedD == 0.01f) ? 0.001f : 0.05f );
@@ -576,7 +599,7 @@ public class PlayerActivity extends Activity implements OnClickListener,
     debugRootView.addView(pitchButtonDown, debugRootView.getChildCount() - 1);
 
     pitchDButton = new Button(this);
-    pitchDButton.setText("5.0");
+    pitchDButton.setText("+0.0");
     pitchDButton.setOnClickListener(this);
     debugRootView.addView(pitchDButton, debugRootView.getChildCount() - 1);
 
